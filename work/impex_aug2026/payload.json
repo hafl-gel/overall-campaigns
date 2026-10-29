@@ -1,0 +1,50 @@
+{
+  "source": "/Users/stefan/Documents/0 - MSc HAFL/MA/analysen/IMPEX_Gfeller_nach MA.xlsx",
+  "target": "/Users/stefan/git/overall-campaigns/daten/IMPEX_Gfeller_nach MA.xlsx",
+  "source_sha256": "c1704debdab83c2e255d685910aa0804a0e3beac12fe1042c9f7d78e99964482",
+  "records": [
+    {
+      "barn": 1,
+      "hall": 9500989,
+      "placed": 8730,
+      "slaughtered": 8600,
+      "slaughter_date": "2026-08-27",
+      "days": 35,
+      "net_kg": 18120.24,
+      "starter_kg": 1960,
+      "grower_kg": 12040,
+      "finisher_deliveries": [
+        3920,
+        4040,
+        1960
+      ],
+      "opening_stock": 7000,
+      "closing_stock": 6000,
+      "total_feed_kg": 24920,
+      "nh3_g_animal": 0.563424320917825,
+      "nh3_total_g": 4850.19356043456,
+      "pdf": "9500989_27082026.pdf"
+    },
+    {
+      "barn": 2,
+      "hall": 9500960,
+      "placed": 8730,
+      "slaughtered": 8384,
+      "slaughter_date": "2026-08-28",
+      "days": 36,
+      "net_kg": 18459.24,
+      "starter_kg": 1980,
+      "grower_kg": 12940,
+      "finisher_deliveries": [
+        3000,
+        11800
+      ],
+      "opening_stock": 4000,
+      "closing_stock": 7500,
+      "total_feed_kg": 26220,
+      "nh3_g_animal": 0.583612967569813,
+      "nh3_total_g": 5020.50135678414,
+      "pdf": "9500960_28082026.pdf"
+    }
+  ]
+}

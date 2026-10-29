@@ -1,6 +1,8 @@
 N-Ausscheidung und TAN werden mit der einstellbaren Umtriebszahl annualisiert.
 Saisongewichte: Winter 25 %, Uebergang 50 %, Sommer 25 %. Kampagnen werden je Stall innerhalb der Saison gleich gewichtet.
 mean_weighted ist nur bei vollstaendigem Kampagnensatz belegt. mean_weighted_available beschreibt ausschliesslich die vorhandenen Kampagnen und ist bei fehlendem August vorlaeufig.
-August 2026 und Dezember 2024 liefern keinen WRG-Stallvergleich. Spaetere August-Bilanzen fliessen in die allgemeinen N-/Saisonmittel ein.
+August 2026 und Dezember 2024 liefern keinen WRG-Stallvergleich. August fliesst in die allgemeinen N-/Saisonmittel ein.
+August: Tier-/Futtermengen aus Mast-PDFs; vorlaeufige Berechnung mit Laborgehalten 2024 auf Nutzerwunsch. Anfangs-/Restbestand dem Endmastfutter zugerechnet.
+August N-Nenner: ausgestallte Tiere (8600/8384) wie in bisherigen R-Zeilen. NH3 kumulierter Messendwert Tag 33,42; N-Bilanz ganzer Mastumtrieb 35/36 Tage. Diese Quoten haben deshalb unterschiedliche Zeitabdeckung.
 Die NH3-N/TAN-Quoten stammen aus den Eingabedaten, nicht automatisch aus dem separaten Emissionskorrekturskript.
 Stalljahre sind Modellwerte bei einem Tier pro Tierplatz und Umtrieb. Wenige, gepaarte Kampagnen: Tests explorativ.

@@ -1,3 +1,3 @@
-﻿Stall;n;mean_unweighted;sd_unweighted;se_unweighted;n_available;expected_campaigns;seasons_available;weight_sum;mean_weighted_available;complete;mean_weighted
-"1";5;285,064167398572;14,1764402270305;6,33989680532053;5;5;3;1;281,951827054806;TRUE;281,951827054806
-"2";5;294,495824359078;16,3587597988015;7,3158597875422;5;5;3;1;298,762737718165;TRUE;298,762737718165
+﻿Stall;n;mean_unweighted;sd_unweighted;se_unweighted;n_available;expected_campaigns;seasons_available;weight_sum;mean_weighted_available;n_provisional;complete;mean_weighted
+"1";5;285,064167398572;14,1764402270305;6,33989680532053;5;5;3;1;281,951827054806;0;TRUE;281,951827054806
+"2";5;294,495824359078;16,3587597988015;7,3158597875422;5;5;3;1;298,762737718165;0;TRUE;298,762737718165

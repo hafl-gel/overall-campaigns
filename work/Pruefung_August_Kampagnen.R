@@ -31,8 +31,9 @@ stopifnot(nrow(ma$model)>1500,setequal(as.character(unique(mo$model$campaign)),c
  setequal(as.character(unique(mw$model$campaign)),c("Feb-24","Apr-24","Jul-24")))
 coverage<-fread("ergebnisse_n_ausscheidung/datenverfuegbarkeit.csv",dec=",")
 summary<-fread("ergebnisse_n_ausscheidung/mittelwerte_nach_stall.csv",dec=",")
-stopifnot(nrow(coverage)==10,all(!coverage[Umtrieb=="Aug-26",N_available]),
- all(!summary$complete),all(is.na(summary$mean_weighted)))
+stopifnot(nrow(coverage)==10,all(coverage[Umtrieb=="Aug-26",N_available]),
+ all(coverage[Umtrieb=="Aug-26",vorlaeufig]),all(summary$complete),all(is.finite(summary$mean_weighted)),all(summary$n_provisional==1))
+stopifnot(all(abs(fread("ergebnisse_n_ausscheidung/n_ausscheidung_mit_gewichten.csv",dec=",")[Umtrieb=="Aug-26",gewicht]-.125)<1e-12))
 # Synthetische Daten ausschliesslich in einem getrennten Testordner.
 testdir<-file.path(base,"work","test_august_n_bilanz")
 dir.create(testdir,recursive=TRUE,showWarnings=FALSE)
@@ -41,10 +42,10 @@ fwrite(data.table(Stall=c(1,2),Umtrieb="Aug-26",N_ausgeschieden_pro_Tier_g=c(35,
  TAN_pro_Tier_g=c(21,21.6),NH3_N_gemessen_pro_Tier_g=c(.5,.52)),
  synthetic,sep=";",dec=",",na="",bom=TRUE)
 env<-new.env(parent=globalenv())
-env$n_overrides<-list(supplement=synthetic,out=file.path(testdir,"ergebnisse"))
+env$n_overrides<-list(input=path.expand("~/Documents/0 - MSc HAFL/MA/analysen/IMPEX_Gfeller_nach MA.xlsx"),supplement=synthetic,out=file.path(testdir,"ergebnisse"))
 sys.source(file.path(base,"N-Excretion.R"),envir=env)
 stopifnot(nrow(env$known)==10,all(env$summary_table$complete),
  nrow(env$df_paired)==3,!any(as.character(env$df_paired$Umtrieb)=="Aug-26"))
 g<-env$known[Umtrieb %in% c("Jul-24","Aug-26"),.(weight=sum(gewicht)),by=Stall]
 stopifnot(all(abs(g$weight-.25)<1e-12),all(env$known[Umtrieb=="Aug-26",gewicht]==.125))
-cat("Geprueft: alle fuenf Kampagnen, RH-Sensormittel, getrennte Offsetmodelle, fehlende N-Bilanzen und spaeterer August-Import.\\n")
+cat("Geprueft: alle fuenf Kampagnen, RH-Sensormittel, getrennte Offsetmodelle, vorlaeufige August-N-Bilanzen und getrennter Zusatzimport.\\n")

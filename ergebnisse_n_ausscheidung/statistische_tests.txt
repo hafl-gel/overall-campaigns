@@ -15,7 +15,7 @@ alternative hypothesis: true location shift is not equal to 0
 data:  df_paired$diff
 W = 0.965, p-value = 0.6406
 
-Ungewichteter Gesamtmittelwert vorhandener Werte: 286.787494848531 g/Tier/Jahr; SD: 15.5948013524703 ; n= 8
+Ungewichteter Gesamtmittelwert vorhandener Werte: 283.268965170255 g/Tier/Jahr; SD: 17.8853005850383 ; n= 10
 
 ### Shapiro-Wilk NH3-N/TAN Stall 1 ###
 
@@ -66,5 +66,5 @@ mean in group 1 mean in group 2
 	Kruskal-Wallis rank sum test
 
 data:  N_Ausscheidung_pro_Tier_und_Jahr_g by Season_en
-Kruskal-Wallis chi-squared = 4, df = 2, p-value = 0.1353
+Kruskal-Wallis chi-squared = 4.5545, df = 2, p-value = 0.1026
 

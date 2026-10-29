@@ -42,20 +42,24 @@ Bei August liegen bereits in den finalen Sensordaten RH-Werte über 100 %. Sie w
 
 Die GAM-Diagnostik ist als PDF und Text gespeichert. Es bestehen Hinweise auf nicht vollständig erfasste zeitliche Struktur. Die bisherigen Glättungsmodelle wurden nicht zu einem vollständigen Zeitreihenmodell mit Autokorrelation umgebaut. Modellkonvergenz und ausgeführte Tests belegen keine validierte kausale WRG-Wirkung; die Bänder sind punktweise modellbedingte Bänder.
 
-## N-Ausscheidung: August noch ohne Bilanzdaten
+## N-Ausscheidung: August 2026 ergänzt, vorläufige Futtergehalte
 
-Die verfügbaren IMPEX-Dateien enthalten nur acht Stall-Kampagnen-Zeilen aus 2024. Die Augustwerte fehlen für beide Ställe. Die leere Eingabevorlage liegt unter daten/N_Bilanz_August2026.csv. Alternativ kann cfg_n$input auf eine später ergänzte vollständige IMPEX-Datei umgestellt werden.
+N-Excretion.R liest jetzt daten/IMPEX_Gfeller_nach MA.xlsx im Projekt. Diese Arbeitsdatei enthält zehn Stall-Kampagnen-Zeilen. Die ursprüngliche Datei im Ordner analysen bleibt unverändert.
 
-Das N-Skript erstellt zehn erwartete Zeilen und zeigt August ausdrücklich mit fehlenden Werten. Es ersetzt fehlende Werte nicht durch null oder einen geschätzten Sommerwert. Der vollständige gewichtete Mittelwert über fünf Kampagnen bleibt leer, solange August fehlt. mean_weighted_available beschreibt separat die vorläufige Rechnung mit den vorhandenen Kampagnen.
+Tier-/Futtermengen für August stammen aus den beiden PDFs im Ordner digital_Annex/1-raw-data/Mastauswertungen/August 26. Halle 9500989 ist Stall 1, Halle 9500960 ist Stall 2. Die N-Bilanzen verwenden auf ausdrücklichen Nutzerwunsch vorläufig die Labor-Futtergehalte von 2024. Bestandsfutter wird wie bisher dem Endmastfutter zugerechnet; diese Phase ist im PDF nicht genannt. Bilanzstatus und n_provisional machen die Vorläufigkeit in den Ergebnissen sichtbar.
 
-Saisongewichte sind Winter 25 %, Übergang 50 % und Sommer 25 %. Innerhalb einer Saison werden die Kampagnen je Stall gleich gewichtet. Sobald August verfügbar ist, teilen sich Juli und August das Sommergewicht. Die Gewichte hängen nicht mehr von einer fest codierten Zeilenreihenfolge ab.
+Saisongewichte: Winter 25 %, Übergang 50 %, Sommer 25 %. Innerhalb der Saison werden Kampagnen gleich gewichtet. Juli und August erhalten je 12,5 %, Februar und Dezember ebenfalls je 12,5 %, April 50 %.
 
-Die Umtriebszahl ist cfg_n$cycles, standardmässig 8,5. source_cycles = 8,5 beschreibt den Faktor des bisherigen jährlichen IMPEX-Exports und dient nur zur Rückrechnung bereits annualisierter Eingabespalten. Primär verwendet das Skript die N-Ausscheidung pro Tier und Mastumtrieb und annualisiert sie einmal.
+Die Umtriebszahl ist cfg_n$cycles (Standard 8,5). source_cycles beschreibt den Jahresfaktor im Excel und muss bei Änderung von Variante_Proben D23 entsprechend angepasst werden. N pro Umtrieb wird primär aus der entsprechenden Spalte übernommen und genau einmal annualisiert.
 
-Dezember und August bleiben bei den Stallvergleichen mit aktiver WRG ausgeschlossen. Die NH3-N/TAN-Quoten beruhen weiterhin auf IMPEX, nicht automatisch auf den neu korrigierten Mengen aus emissionen_mettmenstetten.R. Die Prozentgrafik zeigt jetzt korrekt 100 mal den dimensionslosen Anteil.
+Die vollständigen gewichteten Mittelwerte betragen vorläufig 276,106477868759 bzw. 296,469298518499 g N/Tierplatz/Jahr. Je Stall fliessen fünf Kampagnen ein, davon eine vorläufige August-Bilanz.
 
-Die Statusmeldung UNVOLLSTAENDIGE DATEN ist bis zur Ergänzung der August-N-Bilanzen beabsichtigt. Die vorhandenen Ergebnisse und ihre Verfügbarkeit werden trotzdem ausgegeben.
+Dezember und August bleiben beim Stallvergleich mit aktiver WRG ausgeschlossen. Die August-NH3-Menge ist der unkorrigierte kumulierte Messendwert an Tag 33,42. Die N-Bilanz umfasst hingegen die ganze Mast von 35/36 Tagen. Die daraus folgende NH3-N/TAN-Quote hat deshalb keine identische Zeitabdeckung.
+
+daten/N_Bilanz_August2026.csv bleibt als optionale Zusatzdatei leer. August nicht gleichzeitig in Excel und CSV eintragen. Einzelheiten zu Quellen, Mengen, Formeln und Annahmen stehen in daten/README_N_Bilanz_August2026.md.
 
 ## Prüfung
 
-work/Pruefung_August_Kampagnen.R prüft fünf geladene Kampagnen, beide August-Ställe, direkte RH-Sensormittel, die Trennung der Modellgruppen und den Umgang mit fehlenden N-Bilanzen. Der spätere August-Import und die Sommergewichtung wurden mit ausdrücklich synthetischen Eingaben in einem separaten Testordner geprüft. Diese Testwerte stehen weder in der echten Eingabevorlage noch in den produktiven Ergebnissen.
+work/Pruefung_August_Kampagnen.R prüft fünf geladene Kampagnen, beide August-Ställe, direkte RH-Sensormittel, die Trennung der Modellgruppen und die vorläufigen August-N-Bilanzen. Der spätere August-Import und die Sommergewichtung wurden mit ausdrücklich synthetischen Eingaben in einem separaten Testordner geprüft. Diese Testwerte stehen weder in der echten Eingabevorlage noch in den produktiven Ergebnissen.
+
+work/Pruefung_IMPEX_August2026.py prüft den PDF-/Excel-Import, Formelergebnisse, unveränderte historische Eingaben und den Abgleich der gewichteten Jahresmittel zwischen Excel und R.

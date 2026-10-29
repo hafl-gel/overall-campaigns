@@ -1,11 +1,11 @@
-# N-Ausscheidung: August 2026 ist vorbereitet, bis N-Bilanzdaten vorliegen.
+# N-Ausscheidung: August 2026 aus Mast-PDFs; Futtergehalte 2024 vorlaeufig.
 working_directory<-path.expand("~/git/overall-campaigns");setwd(working_directory)
 source("kampagnen_daten.R")
 overall_check_packages(c("data.table","readxl","ggplot2"))
 suppressPackageStartupMessages({library(data.table);library(ggplot2)})
 cfg_n<-list(
- input=path.expand("~/Documents/0 - MSc HAFL/MA/analysen/IMPEX_Gfeller_nach MA.xlsx"),sheet="R",
- # Spaeter alternativ die aktualisierte IMPEX-Datei oben eintragen.
+ input=file.path(working_directory,"daten","IMPEX_Gfeller_nach MA.xlsx"),sheet="R",
+ # Excel ist die Hauptquelle. Zusatzdatei leer lassen, wenn August bereits im Excel steht.
  supplement=file.path(working_directory,"daten","N_Bilanz_August2026.csv"),
  out=file.path(working_directory,"ergebnisse_n_ausscheidung"),
  campaigns=c("feb","apr","jul","dec","aug"),
@@ -43,7 +43,8 @@ normalise_input<-function(x,source_name){
  fallback<-num("NH3-N_gemessen_pro_Tier_g")
  nh3n_cycle[!is.finite(nh3n_cycle)]<-fallback[!is.finite(nh3n_cycle)]
  data.table(Stall=trimws(as.character(x$Stall)),Umtrieb=trimws(as.character(x$Umtrieb)),
-  N_cycle=n_cycle,TAN_cycle=tan_cycle,NH3N_cycle=nh3n_cycle,source=source_name)
+  N_cycle=n_cycle,TAN_cycle=tan_cycle,NH3N_cycle=nh3n_cycle,
+  Bilanzstatus=if("Bilanzstatus" %in% names(x))as.character(x$Bilanzstatus) else NA_character_,source=source_name)
 }
 original<-normalise_input(readxl::read_excel(cfg_n$input,sheet=cfg_n$sheet),cfg_n$input)
 additional<-normalise_input(fread(cfg_n$supplement,sep=";",dec=",",na.strings=c("","NA")),cfg_n$supplement)
@@ -61,9 +62,10 @@ df[,Anteil_NH3_Emission:=ifelse(is.finite(TAN)&TAN>0,NH3_N_gemessen_pro_Tier_und
 df[,Anteil_NH3_Emission_pct:=100*Anteil_NH3_Emission]
 df[,`:=`(Stall=factor(Stall,levels=c("1","2")),
  Umtrieb=factor(Umtrieb,levels=reg$label),Season_en=factor(Season,levels=names(cfg_n$season_weights)))]
+df[,vorlaeufig:=!is.na(Bilanzstatus)&grepl("vorl",Bilanzstatus,ignore.case=TRUE)]
 setorder(df,Umtrieb,Stall)
 coverage<-df[,.(Umtrieb,Stall,Season,wrg_active,N_available=is.finite(N_cycle),
- TAN_available=is.finite(TAN_cycle),NH3N_available=is.finite(NH3N_cycle),source)]
+ TAN_available=is.finite(TAN_cycle),NH3N_available=is.finite(NH3N_cycle),vorlaeufig,Bilanzstatus,source)]
 overall_csv(coverage,cfg_n$out,"datenverfuegbarkeit")
 known<-df[is.finite(N_Ausscheidung_pro_Tier_und_Jahr_g)]
 known[,gewicht:=cfg_n$season_weights[as.character(Season_en)]/.N,by=.(Stall,Season_en)]
@@ -73,6 +75,8 @@ unweighted_summary<-known[,.(n=.N,mean_unweighted=mean(N_Ausscheidung_pro_Tier_u
 weighted_summary<-known[,.(n_available=.N,expected_campaigns=nrow(reg),
  seasons_available=uniqueN(Season_en),weight_sum=sum(gewicht),
  mean_weighted_available=sum(N_Ausscheidung_pro_Tier_und_Jahr_g*gewicht)/sum(gewicht)),by=Stall]
+provisional_summary<-known[,.(n_provisional=sum(vorlaeufig)),by=Stall]
+weighted_summary<-merge(weighted_summary,provisional_summary,by="Stall")
 weighted_summary[,complete:=n_available==expected_campaigns & seasons_available==length(cfg_n$season_weights)]
 weighted_summary[,mean_weighted:=ifelse(complete,mean_weighted_available,NA_real_)]
 summary_table<-merge(unweighted_summary,weighted_summary,by="Stall")
@@ -101,7 +105,7 @@ p_qq<-ggplot(df_paired,aes(sample=diff))+stat_qq()+stat_qq_line(colour="red")+
 p_barn<-ggplot(known,aes(Stall,N_Ausscheidung_pro_Tier_und_Jahr_g,fill=Stall))+geom_boxplot()+
  scale_fill_manual(values=c("1"="red","2"="blue"))+
  labs(title="Annual Nitrogen Excretion per Animal Place",x="Barn",y="N excretion [g/year]",fill="Barn",
- caption=paste("Vorhandene Bilanzdaten:",paste(unique(as.character(known$Umtrieb)),collapse=", ")))+overall_theme()
+ caption=paste("Bilanzdaten:",paste(unique(as.character(known$Umtrieb)),collapse=", "),"| August: Futtergehalte 2024 vorlaeufig."))+overall_theme()
 df_test<-df[wrg_active==TRUE & is.finite(Anteil_NH3_Emission_pct)]
 for(h in c("1","2"))add_test(paste("Shapiro-Wilk NH3-N/TAN Stall",h),shapiro.test(df_test[Stall==h,Anteil_NH3_Emission_pct]))
 dev<-abs(df_test$Anteil_NH3_Emission_pct-ave(df_test$Anteil_NH3_Emission_pct,df_test$Stall,FUN=median))
@@ -122,7 +126,7 @@ if(kw_result$p.value<.05 && requireNamespace("rstatix",quietly=TRUE)){
  overall_csv(as.data.table(dunn_result),cfg_n$out,"dunn_saison_bh")
 }
 p_season<-ggplot(known,aes(Season_en,N_Ausscheidung_pro_Tier_und_Jahr_g,fill=Season_en))+geom_boxplot()+
- scale_fill_brewer(palette="Set2")+labs(title="Annual Nitrogen Excretion by Season",x="Season",y="N excretion [g/year]",fill="Season")+overall_theme()
+ scale_fill_brewer(palette="Set2")+labs(title="Annual Nitrogen Excretion by Season",x="Season",y="N excretion [g/year]",fill="Season",caption="August 2026 vorlaeufig: Futtergehalte 2024; Bestandsfutter als Endmastfutter.")+overall_theme()
 plots<-list(histogramm_differenzen=p_hist,qq_differenzen=p_qq,n_nach_stall=p_barn,nh3_n_anteil_tan=p_share,n_nach_saison=p_season)
 for(name in names(plots)){if(interactive())print(plots[[name]]);overall_save_plot(plots[[name]],cfg_n$out,name,7)}
 overall_csv(df,cfg_n$out,"alle_kampagnen_mit_fehlenden_werten")
@@ -136,14 +140,16 @@ missing_rows<-coverage[N_available==FALSE]
 notes<-c("N-Ausscheidung und TAN werden mit der einstellbaren Umtriebszahl annualisiert.",
  "Saisongewichte: Winter 25 %, Uebergang 50 %, Sommer 25 %. Kampagnen werden je Stall innerhalb der Saison gleich gewichtet.",
  "mean_weighted ist nur bei vollstaendigem Kampagnensatz belegt. mean_weighted_available beschreibt ausschliesslich die vorhandenen Kampagnen und ist bei fehlendem August vorlaeufig.",
- "August 2026 und Dezember 2024 liefern keinen WRG-Stallvergleich. Spaetere August-Bilanzen fliessen in die allgemeinen N-/Saisonmittel ein.",
+ "August 2026 und Dezember 2024 liefern keinen WRG-Stallvergleich. August fliesst in die allgemeinen N-/Saisonmittel ein.",
+ "August: Tier-/Futtermengen aus Mast-PDFs; vorlaeufige Berechnung mit Laborgehalten 2024 auf Nutzerwunsch. Anfangs-/Restbestand dem Endmastfutter zugerechnet.",
+ "August N-Nenner: ausgestallte Tiere (8600/8384) wie in bisherigen R-Zeilen. NH3 kumulierter Messendwert Tag 33,42; N-Bilanz ganzer Mastumtrieb 35/36 Tage. Diese Quoten haben deshalb unterschiedliche Zeitabdeckung.",
  "Die NH3-N/TAN-Quoten stammen aus den Eingabedaten, nicht automatisch aus dem separaten Emissionskorrekturskript.",
  "Stalljahre sind Modellwerte bei einem Tier pro Tierplatz und Umtrieb. Wenige, gepaarte Kampagnen: Tests explorativ.")
 writeLines(notes,file.path(cfg_n$out,"methodik.txt"))
 if(nrow(missing_rows)){
  status<-paste0("UNVOLLSTAENDIGE DATEN: N-Bilanz fehlt fuer ",paste(paste(missing_rows$Umtrieb,missing_rows$Stall,sep="/S"),collapse=", "))
  warning(status,call.=FALSE)
-}else status<-"ERFOLGREICH"
+}else if(any(df$vorlaeufig))status<-"ERFOLGREICH MIT VORLAEUFIGER AUGUST-N-BILANZ (Futtergehalte 2024; Bestandsfutter als Endmastfutter)" else status<-"ERFOLGREICH"
 writeLines(c(status,paste("Vorhandene N-Bilanzen:",nrow(known),"/",nrow(df))),file.path(cfg_n$out,"laufstatus.txt"))
 print(summary_table)
 cat(status,"\n")
