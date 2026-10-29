@@ -1,0 +1,70 @@
+
+### Gepaarter Wilcoxon-Test N-Ausscheidung (nur WRG-Kampagnen) ###
+
+	Wilcoxon signed rank exact test
+
+data:  df_paired$Stall_1 and df_paired$Stall_2
+V = 2, p-value = 0.75
+alternative hypothesis: true location shift is not equal to 0
+
+
+### Shapiro-Wilk der gepaarten Differenzen ###
+
+	Shapiro-Wilk normality test
+
+data:  df_paired$diff
+W = 0.965, p-value = 0.6406
+
+Ungewichteter Gesamtmittelwert vorhandener Werte: 286.787494848531 g/Tier/Jahr; SD: 15.5948013524703 ; n= 8
+
+### Shapiro-Wilk NH3-N/TAN Stall 1 ###
+
+	Shapiro-Wilk normality test
+
+data:  df_test[Stall == h, Anteil_NH3_Emission_pct]
+W = 0.83495, p-value = 0.201
+
+
+### Shapiro-Wilk NH3-N/TAN Stall 2 ###
+
+	Shapiro-Wilk normality test
+
+data:  df_test[Stall == h, Anteil_NH3_Emission_pct]
+W = 0.99898, p-value = 0.9389
+
+
+### Levene mit Medianzentrum, NH3-N/TAN ###
+              Df Sum Sq Mean Sq F value Pr(>F)
+df_test$Stall  1   6.39    6.39   0.744  0.437
+Residuals      4  34.36    8.59               
+
+### Wilcoxon-Rangsumme NH3-N/TAN (explorativ) ###
+
+	Wilcoxon rank sum exact test
+
+data:  Anteil_NH3_Emission_pct by Stall
+W = 9, p-value = 0.1
+alternative hypothesis: true location shift is not equal to 0
+
+
+### Welch-t-Test NH3-N/TAN (explorativ) ###
+
+	Welch Two Sample t-test
+
+data:  Anteil_NH3_Emission_pct by Stall
+t = 2.4759, df = 2.2456, p-value = 0.118
+alternative hypothesis: true difference in means between group 1 and group 2 is not equal to 0
+95 percent confidence interval:
+ -3.889788 17.590096
+sample estimates:
+mean in group 1 mean in group 2 
+      11.489921        4.639767 
+
+
+### Kruskal-Wallis ueber Saisons ###
+
+	Kruskal-Wallis rank sum test
+
+data:  N_Ausscheidung_pro_Tier_und_Jahr_g by Season_en
+Kruskal-Wallis chi-squared = 4, df = 2, p-value = 0.1353
+

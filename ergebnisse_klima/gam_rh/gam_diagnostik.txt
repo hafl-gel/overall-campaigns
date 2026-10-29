@@ -1,0 +1,90 @@
+
+###  Feb-24  ###
+
+Method: REML   Optimizer: outer newton
+full convergence after 6 iterations.
+Gradient range [-0.0004238385,0.000232824]
+(score 4174.445 & scale 9.94333).
+Hessian positive definite, eigenvalue range [3.372551,803.0375].
+Model rank =  20 / 20 
+
+Basis dimension (k) checking results. Low p-value (k-index<1) may
+indicate that k is too low, especially if edf is close to k'.
+
+                           k'  edf k-index p-value    
+s(masttag):housingBarn 1 9.00 8.84    0.38  <2e-16 ***
+s(masttag):housingBarn 2 9.00 8.56    0.38  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+###  Apr-24  ###
+
+Method: REML   Optimizer: outer newton
+full convergence after 9 iterations.
+Gradient range [-0.0014879,0.001288713]
+(score 4795.566 & scale 21.80447).
+Hessian positive definite, eigenvalue range [3.619948,801.0396].
+Model rank =  20 / 20 
+
+Basis dimension (k) checking results. Low p-value (k-index<1) may
+indicate that k is too low, especially if edf is close to k'.
+
+                           k'  edf k-index p-value    
+s(masttag):housingBarn 1 9.00 8.81    0.22  <2e-16 ***
+s(masttag):housingBarn 2 9.00 8.78    0.22  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+###  Jul-24  ###
+
+Method: REML   Optimizer: outer newton
+full convergence after 5 iterations.
+Gradient range [-0.002208087,0.001676692]
+(score 5354.854 & scale 46.38113).
+Hessian positive definite, eigenvalue range [0.002193641,799.9993].
+Model rank =  20 / 20 
+
+Basis dimension (k) checking results. Low p-value (k-index<1) may
+indicate that k is too low, especially if edf is close to k'.
+
+                           k'  edf k-index p-value    
+s(masttag):housingBarn 1 9.00 2.79     0.1  <2e-16 ***
+s(masttag):housingBarn 2 9.00 1.01     0.1  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+###  Dec-24  ###
+
+Method: REML   Optimizer: outer newton
+full convergence after 9 iterations.
+Gradient range [-0.001566494,0.00144972]
+(score 3857.797 & scale 6.693651).
+Hessian positive definite, eigenvalue range [3.814508,800.0413].
+Model rank =  20 / 20 
+
+Basis dimension (k) checking results. Low p-value (k-index<1) may
+indicate that k is too low, especially if edf is close to k'.
+
+                           k'  edf k-index p-value    
+s(masttag):housingBarn 1 9.00 8.98    0.52  <2e-16 ***
+s(masttag):housingBarn 2 9.00 8.93    0.52  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+###  Aug-26  ###
+
+Method: REML   Optimizer: outer newton
+full convergence after 6 iterations.
+Gradient range [-0.001523706,0.000754316]
+(score 6055.616 & scale 110.9817).
+Hessian positive definite, eigenvalue range [2.950799,796.038].
+Model rank =  20 / 20 
+
+Basis dimension (k) checking results. Low p-value (k-index<1) may
+indicate that k is too low, especially if edf is close to k'.
+
+                           k'  edf k-index p-value    
+s(masttag):housingBarn 1 9.00 8.60    0.05  <2e-16 ***
+s(masttag):housingBarn 2 9.00 8.62    0.05  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

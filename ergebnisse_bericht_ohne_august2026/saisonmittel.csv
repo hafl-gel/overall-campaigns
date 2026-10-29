@@ -1,0 +1,13 @@
+﻿variant;component;season;g_animal;weight
+"stall1_realitaet";"basis";"transition";2,15713448283278;0,5
+"stall1_realitaet";"basis";"winter";2,61341633321463;0,25
+"stall1_realitaet";"basis";"summer";4,37871684841482;0,25
+"stall1_realitaet";"wrg";"transition";1,03151489457153;0,5
+"stall1_realitaet";"wrg";"winter";1,3541049761425;0,25
+"stall1_realitaet";"wrg";"summer";1,65790528341378;0,25
+"mittel_beider_staelle";"basis";"transition";1,90296955100585;0,5
+"mittel_beider_staelle";"basis";"winter";2,30836667329056;0,25
+"mittel_beider_staelle";"basis";"summer";3,86279339620368;0,25
+"mittel_beider_staelle";"wrg";"transition";0,909976383670282;0,5
+"mittel_beider_staelle";"wrg";"winter";1,19455720492714;0,25
+"mittel_beider_staelle";"wrg";"summer";1,46256216193115;0,25

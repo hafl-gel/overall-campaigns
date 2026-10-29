@@ -1,0 +1,178 @@
+
+### Feb-24 ###
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+rh_mean ~ s(masttag, by = housing) + housing
+
+Parametric coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    46.5851     0.1111  419.16   <2e-16 ***
+housingBarn 2   7.0014     0.1572   44.55   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                           edf Ref.df      F p-value    
+s(masttag):housingBarn 1 8.839  8.992 1078.1  <2e-16 ***
+s(masttag):housingBarn 2 8.561  8.945  134.2  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.889   Deviance explained =   89%
+-REML = 4174.4  Scale est. = 9.9433    n = 1610
+
+### Apr-24 ###
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+rh_mean ~ s(masttag, by = housing) + housing
+
+Parametric coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    53.4093     0.1648 324.117   <2e-16 ***
+housingBarn 2   2.1993     0.2330   9.437   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                           edf Ref.df     F p-value    
+s(masttag):housingBarn 1 8.815  8.990 282.3  <2e-16 ***
+s(masttag):housingBarn 2 8.784  8.986 164.5  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.718   Deviance explained = 72.2%
+-REML = 4795.6  Scale est. = 21.804    n = 1606
+
+### Jul-24 ###
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+rh_mean ~ s(masttag, by = housing) + housing
+
+Parametric coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    67.8404     0.2405 282.101   <2e-16 ***
+housingBarn 2  -0.8602     0.3401  -2.529   0.0115 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                           edf Ref.df      F p-value    
+s(masttag):housingBarn 1 2.787  3.469  92.83  <2e-16 ***
+s(masttag):housingBarn 2 1.008  1.015 456.66  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =   0.33   Deviance explained = 33.2%
+-REML = 5354.9  Scale est. = 46.381    n = 1604
+
+### Dec-24 ###
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+rh_mean ~ s(masttag, by = housing) + housing
+
+Parametric coefficients:
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    82.07204    0.09136  898.36   <2e-16 ***
+housingBarn 2 -10.37120    0.12920  -80.27   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                           edf Ref.df      F p-value    
+s(masttag):housingBarn 1 8.977  9.000 1296.2  <2e-16 ***
+s(masttag):housingBarn 2 8.927  8.998  758.4  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =   0.94   Deviance explained =   94%
+-REML = 3857.8  Scale est. = 6.6937    n = 1604
+
+### Aug-26 ###
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+rh_mean ~ s(masttag, by = housing) + housing
+
+Parametric coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    87.0657     0.3729  233.47   <2e-16 ***
+housingBarn 2  -7.2387     0.5274  -13.72   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                           edf Ref.df     F p-value    
+s(masttag):housingBarn 1 8.602  8.955 81.38  <2e-16 ***
+s(masttag):housingBarn 2 8.618  8.958 55.71  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.472   Deviance explained = 47.8%
+-REML = 6055.6  Scale est. = 110.98    n = 1596
+
+### gam_main ###
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+rh_mean ~ s(masttag, by = housing) + housing + campaign
+
+Parametric coefficients:
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)     48.6747     0.1761  276.44   <2e-16 ***
+housingBarn 2    2.7852     0.1762   15.81   <2e-16 ***
+campaignApr-24   4.4454     0.2157   20.61   <2e-16 ***
+campaignJul-24  17.3578     0.2158   80.44   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                           edf Ref.df     F p-value    
+s(masttag):housingBarn 1 7.359  8.346 430.4  <2e-16 ***
+s(masttag):housingBarn 2 7.851  8.657 170.8  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.718   Deviance explained = 71.9%
+-REML =  15595  Scale est. = 37.414    n = 4820
+
+### gam_offsets ###
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+rh_mean ~ s(masttag, by = housing) + housing + campaign
+
+Parametric coefficients:
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)     81.2941     0.2659  305.68   <2e-16 ***
+housingBarn 2   -8.8089     0.3073  -28.66   <2e-16 ***
+campaignAug-26   6.5535     0.3073   21.32   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                           edf Ref.df     F p-value    
+s(masttag):housingBarn 1 8.826  8.991 189.5  <2e-16 ***
+s(masttag):housingBarn 2 8.718  8.977 117.9  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.558   Deviance explained = 56.1%
+-REML =  11500  Scale est. = 75.565    n = 3200

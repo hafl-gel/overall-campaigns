@@ -1,0 +1,6 @@
+ERFOLGREICH
+Beginn: 2026-10-28 23:06:57
+Ende: 2026-10-28 23:07:00
+Umtriebe: 8.5
+Winter      25 %, Übergangszeit      50 %, Sommer      25 %
+Ausgabeordner: /Users/stefan/git/overall-campaigns/ergebnisse_bericht_ohne_august2026

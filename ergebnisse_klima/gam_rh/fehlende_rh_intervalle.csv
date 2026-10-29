@@ -1,0 +1,9 @@
+﻿housing;agg_time;rh_mean;rh_sd;n;n_sensors;n_rh_above_100;n_rh_below_0;st;masttag;campaign;campaign_code;housing_code;wrg_active;season
+"Barn 1";2026-08-06T12:00:00Z;NA;NA;2;2;0;0;2026-08-06T12:00:00Z;13,5833333333333;"Aug-26";"aug";"housing_1";FALSE;"Summer"
+"Barn 1";2026-08-06T13:00:00Z;NA;NA;2;2;0;0;2026-08-06T13:00:00Z;13,625;"Aug-26";"aug";"housing_1";FALSE;"Summer"
+"Barn 1";2026-08-09T12:00:00Z;NA;NA;2;2;0;0;2026-08-09T12:00:00Z;16,5833333333333;"Aug-26";"aug";"housing_1";FALSE;"Summer"
+"Barn 1";2026-08-13T05:00:00Z;NA;NA;2;2;0;0;2026-08-13T05:00:00Z;20,2916666666667;"Aug-26";"aug";"housing_1";FALSE;"Summer"
+"Barn 2";2026-08-06T12:00:00Z;NA;NA;5;5;0;0;2026-08-06T12:00:00Z;13,5833333333333;"Aug-26";"aug";"housing_2";FALSE;"Summer"
+"Barn 2";2026-08-06T13:00:00Z;NA;NA;5;5;0;0;2026-08-06T13:00:00Z;13,625;"Aug-26";"aug";"housing_2";FALSE;"Summer"
+"Barn 2";2026-08-09T12:00:00Z;NA;NA;5;5;0;0;2026-08-09T12:00:00Z;16,5833333333333;"Aug-26";"aug";"housing_2";FALSE;"Summer"
+"Barn 2";2026-08-13T05:00:00Z;NA;NA;5;5;0;0;2026-08-13T05:00:00Z;20,2916666666667;"Aug-26";"aug";"housing_2";FALSE;"Summer"

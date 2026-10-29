@@ -1,0 +1,5 @@
+150 Proben; Tag 34: 40 Proben in 8 Gruppen. Kampagnen: Februar 24, April 24, Juli 24, Dezember 24.
+Mittelwert +/- Standardabweichung der Proben (SD)
+Mindestens ein gemeinsamer Buchstabe: kein nachgewiesener Unterschied. Ohne gemeinsamen Buchstaben: adjustiertes p < 0,05. Einfaktorielle ANOVA und Tukey-HSD; alle Kampagne-Stall-Gruppen je Merkmal werden verglichen.
+Wiederholungen sind Einstreuproben innerhalb eines Stalls, keine unabhaengigen Staelle oder Kampagnen. Die Tests sind explorativ und belegen keinen kausalen WRG-Effekt. Dezember 2024 und August 2026: beide Staelle ohne WRG. Die Probenstreuung ist kein pauschaler Messfehler aus der NH3-Auswertung.
+Mindestens ein Merkmal zeigt Abweichungen von Normalverteilung oder gleicher Varianz. Es wird die eingestellte Methode verwendet, ohne datenabhaengigen Methodenwechsel. Alternativen sind im Skript einstellbar.

@@ -1,0 +1,4 @@
+Arithmetischer Sensormittelwert, nicht nach Luftvolumenstrom gewichtet.
+Vorhandene RH-Werte ausserhalb 0-100 % werden protokolliert und nicht gekappt.
+Mastdauer aus local-times.rds. Aggregation nach Zeitintervall, ohne versehentliche Gruppierung nach jedem Einzelzeitpunkt.
+Die GAM-Fehlerbaender setzen keine explizite Zeitreihen-Autokorrelation um.

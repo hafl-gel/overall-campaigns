@@ -1,0 +1,11 @@
+﻿housing;location;coverage_mean;bfn_extrapolated_mean;low_frequency_mean
+"housing_1";"vent_links";1;0;0,0120684523809524
+"housing_1";"vent_rechts";1;0;0,474770171957672
+"housing_1";"vent_turbo";1;0;0,103655753968254
+"housing_2";"vent_links";0,999814814814815;0,000396825396825397;0,476574074074074
+"housing_2";"vent_mlinks";1;0;0,0894378306878307
+"housing_2";"vent_mrechts";1;0;0,0956481481481482
+"housing_2";"vent_rechts";1;0;0,469255952380953
+"housing_2";"vent_wrg";1;0;0,0656365740740741
+"housing_1";"total";1;0;0,196831459435626
+"housing_2";"total";0,999814814814815;7,93650793650794e-05;0,239310515873016

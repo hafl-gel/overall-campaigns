@@ -1,0 +1,6 @@
+﻿code;id;label;season;wrg_active;path;md5
+"feb";"feb2024";"Feb-24";"Winter";TRUE;"/Users/stefan/git/mettmenstetten-feb2024/rsaves/final-dataset.qd";"8e18e882ac24332996e9e6308bbf038a"
+"apr";"apr2024";"Apr-24";"Transition";TRUE;"/Users/stefan/git/mettmenstetten-apr2024/rsaves/final-dataset.qd";"6359307a833e9cbb8a8aacb794628494"
+"jul";"jul2024";"Jul-24";"Summer";TRUE;"/Users/stefan/git/mettmenstetten-jul2024/rsaves/final-dataset.qd";"fb709ddbcddfe480376501e506e3b2dd"
+"dec";"dec2024";"Dec-24";"Winter";FALSE;"/Users/stefan/git/mettmenstetten-dec2024/rsaves/final-dataset.qd";"1381dbab456b37d5e0553832b2b3ef0b"
+"aug";"aug2026";"Aug-26";"Summer";FALSE;"/Users/stefan/git/mettmenstetten-aug2026/rsaves/final-dataset.qd";"a6ef9bd10aa928972694b3f673a089df"

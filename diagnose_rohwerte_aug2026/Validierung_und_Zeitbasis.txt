@@ -1,0 +1,6 @@
+Kalibrationsreferenz des gespeicherten Intercomparisons: avg entspricht exakt cal-s12.
+Keine unabhaengige Nullgasvalidierung aus diesen Vergleichsdaten ableitbar.
+Bei der Ohne-Nullsetzung-Rechnung wurden nur negative NH3-Nettowerte beibehalten.
+Echte Null-Luftstroeme bei abgeschalteten Ventilatoren bleiben erhalten.
+Die bestehende Kumulierung mit Nullsetzung wurde in allen fuenf Kampagnen auf 1e-8 kg reproduziert.
+CSV-Zeitspalten st/et werden von fwrite in UTC ausgegeben; time_local ist explizit Europe/Zurich.

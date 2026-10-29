@@ -1,0 +1,393 @@
+# NH3-Auswertung Mettmenstetten. Quelldateien werden ausschliesslich gelesen.
+# Ausführen: source("emissionen_mettmenstetten.R") oder Rscript emissionen_mettmenstetten.R
+# Pakete bei Bedarf selbst installieren: install.packages(c("data.table", "qs2", "readxl"))
+working_directory <- path.expand("~/git/overall-campaigns")
+if (!dir.exists(working_directory)) stop("Arbeitsordner fehlt: ", working_directory)
+setwd(working_directory)
+required <- c("data.table", "qs2", "readxl")
+missing <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing)) stop("Fehlende Pakete: ", paste(missing, collapse = ", "))
+suppressPackageStartupMessages(library(data.table))
+
+# EINSTELLUNGEN ---------------------------------------------------------------
+anzahl_umtriebe <- 8.5  # Umtriebe pro Jahr: hier frei einstellen
+cfg <- list(
+  root = path.expand("~/git"),
+  excel = path.expand("~/Documents/0 - MSc HAFL/MA/documents/Korrektur_Emissionen_Mettmenstetten_neue-Kalibration.xlsx"),
+  out = "ergebnisse_bericht_ohne_august2026",
+  cycles = anzahl_umtriebe,
+  # Modellannahme: ein Tier pro Tierplatz und Umtrieb. Keine Kapazitäten geliefert.
+  # Bei abweichender Belegung hier Tiere je Platz einsetzen.
+  animals_per_place = 1,
+  offset_method = "cumulative_endpoint", # kumulierte Endwerte pro Tier wie im PDF
+  fit_points = 8,        # quadratischer Fit, wie Excel letzte 8 kumulierte Tageswerte
+  max_extrapolation_days = 4,
+  season_weights = c(winter = .25, transition = .50, summer = .25)
+)
+campaigns <- data.table(
+  # Juli 2025 ist ausdrücklich ausgeschlossen und wird nicht importiert.
+  campaign = c("feb2024", "apr2024", "jul2024", "dec2024", "aug2026"),
+  season = c("winter", "transition", "summer", "winter", "summer"),
+  role = c("wrg", "wrg", "wrg", "offset", "offset"),
+  include_annual = rep(TRUE, 5)
+)
+# Szenario: August 2026 weder als Offset noch als Basis verwenden.
+campaigns <- campaigns[campaign != "aug2026"]
+# Endtag ist verstrichene Mastdauer. Excel unterscheidet Endtag und Schlachttag.
+slaughter <- data.table(end_day = c(29,30,31,32,33.5,34.25,35.25,36.25),
+                        slaughter_day = 30:37,
+                        share = c(18,2,6,6,4,2,51,11)/100)
+stopifnot(abs(sum(slaughter$share)-1) < 1e-12,
+          abs(sum(cfg$season_weights)-1) < 1e-12,
+          all(slaughter$share >= 0), cfg$cycles > 0, cfg$animals_per_place > 0)
+dir.create(cfg$out, recursive = TRUE, showWarnings = FALSE)
+save_csv <- function(x, name) fwrite(x, file.path(cfg$out, paste0(name, ".csv")), sep = ";", dec = ",", bom = TRUE, na = "NA")
+folders <- list.dirs(cfg$root,recursive=FALSE,full.names=FALSE)
+ids <- sub("^mettmenstetten-","",folders[grepl("^mettmenstetten-",folders)])
+inventory <- data.table(campaign=ids)
+inventory[, status := fifelse(campaign %in% campaigns$campaign,"importiert",
+  "nicht_in_Excel_und_anderes_Datenschema_separat_pruefen")]
+inventory[campaign == "aug2026", status := "Szenario_ohne_August2026_ausgeschlossen"]
+inventory[campaign == "jul2025", status := "auf_Nutzerwunsch_vollstaendig_ausgeschlossen"]
+save_csv(inventory,"kampagneninventar")
+
+# 1. IMPORT UND DATENPRÜFUNG --------------------------------------------------
+read_campaign <- function(id) {
+  path <- file.path(cfg$root, paste0("mettmenstetten-", id), "rsaves", "final-dataset.qd")
+  if (!file.exists(path)) stop("Fehlende Kampagnendatei: ", path)
+  x <- as.data.table(qs2::qd_read(path))
+  times <- readRDS(file.path(dirname(path), "local-times.rds"))
+  needed <- c("housing","tracer","type","flow_direction","location","sensor","units","value","days","st","et","coverage")
+  if (!all(needed %in% names(x))) stop("Unbekanntes Datenschema: ", id)
+  cc <- x[tracer == "nh3" & type == "cum_flow" & flow_direction == "net" & location == "total"]
+  aa <- x[location == "bfn" & sensor == "tiere"]
+  ff <- x[tracer == "nh3" & type == "flow" & flow_direction == "net" & location == "total"]
+  if (anyDuplicated(cc[, .(housing, st, et)]) || anyDuplicated(aa[, .(housing, st, et)]))
+    stop("Mehrdeutige kumulierte Reihe/Tierzahl: ", id)
+  stopifnot(setequal(unique(cc$housing), c("housing_1","housing_2")), all(cc$units == "kg"))
+  setorder(cc, housing, st); setorder(aa, housing, st)
+  z <- merge(cc, aa[, .(housing, st, et, animals = value)], by = c("housing","st","et"), all.x = TRUE)
+  if (any(!is.finite(z$value)) || any(!is.finite(z$animals) | z$animals <= 0))
+    stop("Fehlende kumulierte Emissionen/Tierzahlen: ", id)
+  # Zeitbasis aus expliziten Einstallungsdaten, nicht blind aus der Spalte days.
+  z[, age_end := as.numeric(difftime(et, times[[.BY$housing]][["from"]], units = "days")), by = housing]
+  z[, age_start := as.numeric(difftime(st, times[[.BY$housing]][["from"]], units = "days")), by = housing]
+  z[, ef := value / animals * 1000] # kumulierte g NH3/Tier, wie Kampagnenberichte
+  z[, campaign := id]
+  quality <- z[, .(
+    cumulative_start_day = min(age_start), measured_end_day = max(age_end),
+    days_axis_shift = median(age_end - as.numeric(et-st, units="days")/2 - days),
+    cumulative_kg = tail(value,1), animals_end = tail(animals,1),
+    ef_end_g_animal = tail(ef,1), coverage_cumulative_end = tail(coverage,1),
+    negative_cumulative_steps = sum(diff(value) < -1e-8),
+    max_interval_hours = max(as.numeric(et-st, units="hours")),
+    max_gap_hours = if (.N > 1) max(c(0, as.numeric(st[-1]-et[-.N], units="hours"))) else 0
+  ), by = .(campaign,housing)]
+  fq <- ff[, .(flow_missing_n = sum(!is.finite(value)), flow_coverage_mean = mean(coverage,na.rm=TRUE)), by=housing]
+  quality <- merge(quality, fq, by="housing")
+  quality[, valid_full_cycle := cumulative_start_day < 1/24 + 1e-6 &
+            abs(days_axis_shift) < 1/24 & negative_cumulative_steps == 0 & max_gap_hours < 1e-6]
+  # Tägliche kumulierte Werte: letzter Messwert im Masttag / mittlere Tierzahl.
+  # Der letzte unvollständige Masttag bleibt ein eigener Stützpunkt.
+  z[, bin := floor(age_start + 1e-8)]
+  daily <- z[, .(day = tail(age_end,1), ef = tail(value,1)/mean(animals)*1000), by=.(campaign,housing,bin)]
+  list(raw=z, daily=daily, quality=quality, path=path)
+}
+data <- setNames(lapply(campaigns$campaign, read_campaign), campaigns$campaign)
+quality <- rbindlist(lapply(data, `[[`, "quality"))
+save_csv(quality, "datenqualitaet")
+save_csv(rbindlist(lapply(data, `[[`, "daily")), "tageswerte_kumuliert")
+valid_ids <- quality[, .(valid = all(valid_full_cycle)), by=campaign][valid == TRUE, campaign]
+bad_requested <- setdiff(campaigns[include_annual == TRUE,campaign], valid_ids)
+if (length(bad_requested)) stop("Ungültige Zeitbasis/Kumulierung im Jahresmittel: ",paste(bad_requested,collapse=", "), ". Siehe datenqualitaet.csv")
+
+# 2. OFFSET: VERHÄLTNIS DER KUMULIERTEN ENDWERTE WIE IM KAMPAGNEN-PDF ----------
+# Ungerundete Endmenge kg / letzte Tierzahl * 1000; keine Tagesinterpolation,
+# keine Extrapolation und keine Quotienten aus den gerundeten PDF-Anzeigen.
+offsets <- rbindlist(lapply(campaigns[role == "offset", campaign], function(id) {
+  if (!id %in% valid_ids) stop("Ungültige Offset-Kampagne: ",id)
+  z <- data[[id]]$raw
+  e1 <- tail(z[housing=="housing_1"][order(et)],1)
+  e2 <- tail(z[housing=="housing_2"][order(et)],1)
+  a <- e1$ef; b <- e2$ef
+  data.table(campaign=id, method=cfg$offset_method,
+    barn1_end=as.character(e1$et), barn2_end=as.character(e2$et),
+    barn1_end_day=e1$age_end, barn2_end_day=e2$age_end,
+    barn1_cumulative_kg=e1$value, barn2_cumulative_kg=e2$value,
+    barn1_animals=e1$animals, barn2_animals=e2$animals,
+    barn1_g_animal=a, barn2_g_animal=b, ratio_2_over_1=b/a)
+}))
+if (any(!is.finite(offsets$ratio_2_over_1) | offsets$ratio_2_over_1 <= 0)) stop("Ungültiges Offsetverhältnis")
+r_winter <- offsets[campaign=="dec2024",ratio_2_over_1]
+r_mean <- r_winter # Ohne August 2026 ausschliesslich Dezemberoffset
+# Zwei Bezugsvarianten, beide mit dem Mittel der beiden Endwert-Verhältnisse.
+variants <- data.table(variant=c("stall1_realitaet","mittel_beider_staelle"),
+  ratio=r_mean, factor_barn1=c(1,(1+r_mean)/2))
+variants[, factor_barn2 := factor_barn1/ratio]
+save_csv(offsets,"offsets");save_csv(variants,"varianten")
+labels <- c(feb2024="Februar 2024",apr2024="April 2024",jul2024="Juli 2024",
+            dec2024="Dezember 2024",aug2026="August 2026")
+
+# Unveränderte Fitmethode: letzte acht Tagesstützpunkte, freie quadratische OLS.
+# Der Fit ist nicht künstlich am letzten Messwert verankert.
+fits <- list(); fit_details <- list(); fit_points <- list(); predictions <- list()
+for(id in campaigns$campaign) for(h in c("housing_1","housing_2")) {
+  d <- copy(data[[id]]$daily[housing==h]);setorder(d,day)
+  f <- tail(d,cfg$fit_points);x0 <- max(f$day);f[,t:=day-x0]
+  m <- lm(ef~t+I(t^2),data=f)
+  stopifnot(m$rank==3,nrow(f)==cfg$fit_points,
+            max(slaughter$end_day)-max(d$day)<=cfg$max_extrapolation_days)
+  key <- paste(id,h,sep="_")
+  fits[[key]] <- list(model=m,x0=x0,daily=d,fit=f)
+  fit_points[[key]] <- f
+  b <- coef(m)
+  fit_details[[key]] <- data.table(campaign=id,housing=h,x0=x0,
+    intercept=b[1],linear=b[2],quadratic=b[3],rmse=sqrt(mean(resid(m)^2)),
+    last_measured_ef=tail(d$ef,1),fit_at_end=unname(b[1]))
+  target <- copy(slaughter)
+  target[,ef:=approx(d$day,d$ef,xout=end_day,rule=1)$y]
+  target[,extrapolated:=end_day>max(d$day)]
+  target[extrapolated==TRUE,ef:=predict(m,newdata=data.frame(t=end_day-x0))]
+  stopifnot(all(is.finite(target$ef)),all(target$ef>=0),all(diff(target$ef)>=-1e-6))
+  target[,`:=`(campaign=id,housing=h)]
+  predictions[[key]] <- target
+}
+curves <- rbindlist(predictions)
+save_csv(curves,"masttag_prognosen");save_csv(rbindlist(fit_points),"fit_stuetzpunkte")
+save_csv(rbindlist(fit_details),"fit_koeffizienten")
+
+# Grafiken zeigen exakt die zur Prognose verwendeten Modelle, vor Skalierung.
+plot_campaign <- function(id) {
+  cols <- c("#A7443F","#2479AD");hs<-c("housing_1","housing_2")
+  ymax <- max(curves[campaign==id,ef],unlist(lapply(hs,function(h) tail(fits[[paste(id,h,sep="_")]]$daily$ef,8))))*1.15
+  plot(NA,xlim=c(25,37),ylim=c(0,ymax),xlab="Verstrichene Mastdauer [Tage]",
+       ylab="Kumulierte NH3-Emission [g/Tier]",main=labels[[id]],las=1)
+  grid(col="#E5E5E5")
+  for(j in seq_along(hs)) {
+    f<-fits[[paste(id,hs[j],sep="_")]];d<-f$daily
+    rect(f$x0,0,37,ymax,col=adjustcolor("#D8DCE4",alpha.f=.12),border=NA)
+    lines(d$day,d$ef,col=adjustcolor(cols[j],alpha.f=.45),lwd=1)
+    points(d$day,d$ef,col=cols[j],pch=1,cex=.7)
+    points(f$fit$day,f$fit$ef,col=cols[j],pch=16,cex=.85)
+    xx<-seq(min(f$fit$day),f$x0,length.out=150)
+    lines(xx,predict(f$model,newdata=data.frame(t=xx-f$x0)),col=cols[j],lwd=2)
+    xx<-seq(f$x0,37,length.out=100)
+    lines(xx,predict(f$model,newdata=data.frame(t=xx-f$x0)),col=cols[j],lwd=2,lty=2)
+    abline(v=f$x0,col=adjustcolor(cols[j],.6),lty=3)
+    p<-curves[campaign==id & housing==hs[j]]
+    points(p$end_day,p$ef,col=cols[j],pch=4,cex=.8,lwd=1.3)
+  }
+  legend("topleft",legend=c("Stall 1","Stall 2"),col=cols,lty=1,lwd=2,bty="n",cex=.85)
+}
+png(file.path(cfg$out,"quadratische_extrapolation_alle.png"),width=1900,height=2100,res=160)
+par(mfrow=c(3,2),mar=c(4,4,3,1),oma=c(2,0,2,0))
+for(id in campaigns$campaign) plot_campaign(id)
+plot.new();legend("center",legend=c("Punkte: Tageswerte; ausgefüllt: 8 Fitpunkte",
+ "Durchgezogen: quadratischer Fit im Messbereich","Gestrichelt: quadratische Extrapolation",
+ "Kreuze: tatsächlich verwendete Schlachttagwerte","Senkrechte Linie: letztes Messende",
+ "Keine Konfidenzbänder; Werte vor Offsetkorrektur"),bty="n",cex=.95)
+mtext("Quadratische Extrapolation der kumulierten Emissionen",outer=TRUE,side=3,line=.5,font=2)
+dev.off()
+for(id in campaigns$campaign) {
+ png(file.path(cfg$out,paste0("extrapolation_",id,".png")),width=1500,height=950,res=160)
+ par(mar=c(5,5,3,1));plot_campaign(id);dev.off()
+}
+
+# Tabelle 4: gemessene kumulierte Endwerte, keine Masttag-Hochrechnung.
+ends <- rbindlist(lapply(campaigns$campaign,function(id) {
+ z<-data[[id]]$raw
+ z[, .(kg=tail(value,1),g_animal=tail(ef,1)),by=.(campaign,housing)]
+}))
+ends<-merge(ends,campaigns,by="campaign")
+report4 <- rbindlist(lapply(seq_len(nrow(variants)),function(i) {
+ v<-variants[i];z<-copy(ends[role=="wrg"])
+ z[,factor:=ifelse(housing=="housing_1",v$factor_barn1,v$factor_barn2)]
+ z[,`:=`(total_kg=kg*factor,emission_g_animal=g_animal*factor,variant=v$variant)]
+ z[,reduction_pct:=ifelse(housing=="housing_2",
+   100*(1-emission_g_animal/emission_g_animal[housing=="housing_1"]),NA_real_),by=campaign]
+ z
+}))
+save_csv(report4,"tabelle4_ungerundet")
+
+# Basis: zuerst beide Ställe einer Offsetkampagne auf dieselbe Bezugsbasis
+# bringen und mitteln; dann Kampagnenmittel je Saison; zuletzt 25/50/25.
+weighted <- curves[,.(g_animal=sum(share*ef)),by=.(campaign,housing)]
+weighted<-merge(weighted,campaigns,by="campaign")
+contributions<-list(); seasons<-list();annual<-list()
+for(i in seq_len(nrow(variants))) {
+ v<-variants[i];z<-copy(weighted)
+ z[,factor:=ifelse(housing=="housing_1",v$factor_barn1,v$factor_barn2)]
+ z[,corrected:=g_animal*factor]
+ base<-if(v$variant=="mittel_beider_staelle") z[role=="offset" | housing=="housing_1"] else z[housing=="housing_1"]
+ # Jede Kampagne hat zunächst das gleiche Gewicht innerhalb ihrer Saison.
+ base[,barn_share:=1/.N,by=campaign]
+ base[,n_campaigns_season:=uniqueN(campaign),by=season]
+ base[,weight:=cfg$season_weights[season]/n_campaigns_season*barn_share]
+ base[,`:=`(variant=v$variant,component="basis")]
+ wrg<-z[role=="wrg" & housing=="housing_2"]
+ wrg[,weight:=cfg$season_weights[season]/.N,by=season]
+ wrg[,`:=`(variant=v$variant,component="wrg",barn_share=1,n_campaigns_season=.N),by=season]
+ stopifnot(abs(sum(base$weight)-1)<1e-12,abs(sum(wrg$weight)-1)<1e-12)
+ c<-rbindlist(list(base,wrg),fill=TRUE)
+ contributions[[i]]<-c
+ seasons[[i]]<-c[,.(g_animal=sum(weight*corrected)/sum(weight),weight=sum(weight)),by=.(variant,component,season)]
+ b<-sum(base$corrected*base$weight)*cfg$cycles*cfg$animals_per_place
+ w<-sum(wrg$corrected*wrg$weight)*cfg$cycles*cfg$animals_per_place
+ annual[[i]]<-data.table(variant=v$variant,basis_g_place_year=b,wrg_g_place_year=w,
+  saved_g_place_year=b-w,reduction_pct=100*(1-w/b),cycles=cfg$cycles)
+}
+annual<-rbindlist(annual); contributions<-rbindlist(contributions);seasons<-rbindlist(seasons)
+save_csv(contributions,"basis_und_wrg_einzelgewichte");save_csv(seasons,"saisonmittel")
+save_csv(annual,"tabelle6_ungerundet");save_csv(slaughter,"schlachttagverteilung")
+
+# Berichtstabellen: Rundung ausschliesslich in der Darstellung.
+fmt<-function(x,d=2) ifelse(is.na(x),"–",formatC(x,digits=d,format="f",decimal.mark=","))
+tables<-list()
+for(v in variants$variant) {
+ z<-report4[variant==v];z[,idx:=match(campaign,campaigns$campaign)];setorder(z,idx,housing)
+ t4<-data.frame(Stall=ifelse(z$housing=="housing_1","Stall 1 (Referenz)","Stall 2 (WRG)"),
+  Messkampagne=unname(labels[z$campaign]),
+  `NH3-Emissionen total [kg]`=fmt(z$total_kg),
+  `NH3-Emissionen pro Tier [g]`=fmt(z$emission_g_animal),
+  `Reduktion durch WRG [%]`=fmt(z$reduction_pct,1),check.names=FALSE)
+ a<-annual[variant==v]
+ t6<-data.frame(Stall=c("Stall 1 (Referenz)","Stall 2 (WRG)"),
+  Messkampagne="Gewichtetes Jahresmittel",
+  `NH3-Emissionen [g/Tierplatz/Jahr]`=fmt(c(a$basis_g_place_year,a$wrg_g_place_year),1),
+  `Reduktion durch WRG [%]`=c("–",fmt(a$reduction_pct,1)),check.names=FALSE)
+ tables[[paste0(v,"_tabelle4")]]<-t4;tables[[paste0(v,"_tabelle6")]]<-t6
+ fwrite(t4,file.path(cfg$out,paste0(v,"_tabelle4.csv")),sep=";",bom=TRUE)
+ fwrite(t6,file.path(cfg$out,paste0(v,"_tabelle6.csv")),sep=";",bom=TRUE)
+}
+html_table<-function(t) paste0("<table><thead><tr>",paste0("<th>",names(t),"</th>",collapse=""),
+ "</tr></thead><tbody>",paste(vapply(seq_len(nrow(t)),function(i)
+ paste0("<tr>",paste0("<td>",as.character(t[i,]),"</td>",collapse=""),"</tr>"),character(1)),collapse=""),"</tbody></table>")
+html<-c("<!doctype html><html lang='de'><meta charset='utf-8'><title>NH3-Berichtstabellen</title>",
+ "<style>body{font:16px Georgia,serif;max-width:1150px;margin:40px auto;color:#111}table{width:100%;border-collapse:collapse;margin:18px 0 26px}th,td{padding:12px 8px;text-align:center;border-bottom:1px solid #aaa}thead{border-top:2px solid #111;border-bottom:2px solid #111}h1{font-size:25px}h2{font-size:21px;margin-top:35px}.note{font:14px Arial;line-height:1.5}.variant{break-before:page}@media print{body{margin:12mm;font-size:11pt}table{break-inside:avoid}}</style>",
+ "<h1>NH3-Emissionen und Reduktion durch die WRG</h1>")
+for(v in variants$variant) {
+ title<-if(v=="stall1_realitaet")"Variante 1: Stall 1 als Realität" else "Variante 2: Realität in der Mitte beider Ställe"
+ html<-c(html,paste0("<section class='variant'><h2>",title,"</h2>"),
+ "<p><i>Tabelle 4: Emissionen der gemessenen Mastumtriebe total, pro Tier und Reduktion durch die WRG.</i></p>",
+ html_table(tables[[paste0(v,"_tabelle4")]]),
+ "<p><i>Tabelle 6: Schlachttag-gewichtete NH3-Emissionen und Reduktionsleistung der WRG, basierend auf der Schweizer Schlachtalter-Verteilung.</i></p>",
+ html_table(tables[[paste0(v,"_tabelle6")]]),"</section>")
+}
+html<-c(html,paste0("<p class='note'>",cfg$cycles," Umtriebe/Jahr; ein Tier je Tierplatz/Umtrieb. Saisongewichte: Winter 25 %, Übergangszeit 50 %, Sommer 25 %. Dezember 2024: beide Ställe ohne WRG, daher nur Basis und Offset. Juli 2025 ausgeschlossen. ±-Angaben sind hier nicht bestimmt: Die bisherige Excel-Fehlerkonvention beschreibt keine validierte Unsicherheit des Mittels beider Offsetkampagnen und der Extrapolation.</p>"),"</html>")
+writeLines(html,file.path(cfg$out,"Berichtstabellen.html"))
+
+# PNG-Tabellen zum Einfügen in den Bericht.
+draw_table<-function(t,title,path) {
+ png(path,width=2200,height=if(nrow(t)>2)900 else 600,res=180)
+ grid::grid.newpage();n<-nrow(t);nc<-ncol(t)
+ grid::grid.text(title,x=.03,y=.94,just="left",gp=grid::gpar(fontsize=15,fontface="italic"))
+ widths<-if(nc==5)c(.20,.19,.20,.20,.21) else c(.23,.25,.30,.22)
+ xx<-.03+.94*(cumsum(widths)-widths/2);yy<-seq(.79,.15,length.out=n+2)
+ for(j in seq_len(nc)) grid::grid.text(paste(strwrap(names(t)[j],width=24),collapse="\n"),x=xx[j],y=yy[1],gp=grid::gpar(fontsize=12,fontface="bold"))
+ for(i in seq_len(n))for(j in seq_len(nc))grid::grid.text(t[i,j],x=xx[j],y=yy[i+1],gp=grid::gpar(fontsize=12))
+ for(y in c(.87,(yy[-length(yy)]+yy[-1])/2))grid::grid.lines(x=c(.03,.97),y=c(y,y),gp=grid::gpar(col="#666666"))
+ dev.off()
+}
+for(n in names(tables))draw_table(tables[[n]],if(grepl("tabelle4",n))"Tabelle 4: Emissionen der gemessenen Mastumtriebe" else "Tabelle 6: Schlachttag-gewichtetes Jahresmittel",file.path(cfg$out,paste0(n,".png")))
+
+# Plausibilitäts- und Reproduzierbarkeitskontrollen.
+stopifnot(!"jul2025" %in% campaigns$campaign,
+ all(contributions[variant=="stall1_realitaet" & component=="basis",housing]=="housing_1"),
+ all(contributions[variant=="mittel_beider_staelle" & component=="basis" & role=="offset",barn_share]==.5))
+for(v in variants$variant) for(comp in c("basis","wrg")) {
+ ss<-contributions[variant==v & component==comp,.(weight=sum(weight)),by=season]
+ stopifnot(max(abs(ss$weight-cfg$season_weights[ss$season]))<1e-12)
+}
+paths<-vapply(data,`[[`,character(1),"path")
+save_csv(data.table(path=paths,md5=unname(tools::md5sum(paths))),"quellen")
+dput(cfg,file=file.path(cfg$out,"parameter.R"))
+capture.output(sessionInfo(),file=file.path(cfg$out,"sessionInfo.txt"))
+print(annual)
+message("Berichtstabellen und Fitgrafiken erstellt: ",normalizePath(cfg$out))
+
+
+# DIREKTER KAMPAGNENVERGLEICH: roh und beide Korrekturvarianten ----------------
+comparison_variants<-rbindlist(list(
+ data.table(variant="unkorrigiert",ratio=NA_real_,factor_barn1=1,factor_barn2=1),
+ variants),use.names=TRUE)
+compare_campaigns<-function(source,metric) {
+ rbindlist(lapply(seq_len(nrow(comparison_variants)),function(i) {
+  v<-comparison_variants[i];z<-copy(source)
+  z[,value:=get(metric)*ifelse(housing=="housing_1",v$factor_barn1,v$factor_barn2)]
+  out<-dcast(z,campaign+season+role~housing,value.var="value")
+  setnames(out,c("housing_1","housing_2"),c("barn1","barn2"))
+  out[,`:=`(variant=v$variant,difference=barn1-barn2,
+    stall_difference_pct=100*(1-barn2/barn1))]
+  out[,reduction_pct:=ifelse(role=="wrg",stall_difference_pct,NA_real_)]
+  out
+ }))
+}
+cmp_end<-compare_campaigns(ends,"g_animal")
+cmp_kg<-compare_campaigns(ends,"kg")
+setnames(cmp_kg,c("barn1","barn2","difference"),c("barn1_total_kg","barn2_total_kg","difference_total_kg"))
+cmp_end<-merge(cmp_end,cmp_kg[,.(campaign,variant,barn1_total_kg,barn2_total_kg,difference_total_kg)],by=c("campaign","variant"))
+cmp_cycle<-compare_campaigns(weighted,"g_animal")
+cmp_cycle[,`:=`(barn1_g_place_year=barn1*cfg$cycles*cfg$animals_per_place,
+ barn2_g_place_year=barn2*cfg$cycles*cfg$animals_per_place,
+ difference_g_place_year=difference*cfg$cycles*cfg$animals_per_place)]
+for(zname in c("cmp_end","cmp_cycle")) {
+ z<-get(zname);z[,`:=`(campaign_order=match(campaign,campaigns$campaign),
+  variant_order=match(variant,comparison_variants$variant))]
+ setorder(z,campaign_order,variant_order);z[,c("campaign_order","variant_order"):=NULL]
+}
+save_csv(cmp_end,"kampagnenvergleich_gemessene_endwerte")
+save_csv(cmp_cycle,"kampagnenvergleich_schlachttaggewichtet")
+variant_labels<-c(unkorrigiert="Unkorrigiert",stall1_realitaet="Stall 1 als Realität",
+ mittel_beider_staelle="Mittlere Stallbasis")
+pretty_compare<-function(z) data.frame(
+ Kampagne=unname(labels[z$campaign]),Variante=unname(variant_labels[z$variant]),
+ `Stall 1 [g/Tier]`=fmt(z$barn1,3),`Stall 2 [g/Tier]`=fmt(z$barn2,3),
+ `Differenz [g/Tier]`=fmt(z$difference,3),
+ `WRG-Reduktion [%]`=fmt(z$reduction_pct,2),check.names=FALSE)
+cmp_html<-c("<!doctype html><html lang='de'><meta charset='utf-8'><title>Kampagnenvergleich ohne August 2026</title>",
+ "<style>body{font:16px Arial;max-width:1200px;margin:35px auto;color:#111}table{border-collapse:collapse;width:100%;margin:24px 0}td,th{padding:10px;text-align:right;border-bottom:1px solid #ccc}td:first-child,td:nth-child(2){text-align:left}th{background:#eef2f5}p{line-height:1.5}@media print{table{font-size:10pt}}</style>",
+ "<h1>Kampagnenvergleich ohne August 2026</h1>",
+ "<h2>Gemessene kumulierte Mast-Endwerte</h2>",html_table(pretty_compare(cmp_end)),
+ "<p>Dezember 2024 ist die Offsetkampagne: beide Ställe ohne WRG. Die Differenz ist dort ein Stallunterschied, keine WRG-Einsparung. Der unkorrigierte Unterschied bei WRG-Kampagnen enthält den Stallunterschied und ist daher keine isolierte WRG-Wirkung.</p>",
+ "<h2>Nach Schlachttagverteilung gewichtete Emissionen pro Tier und Umtrieb</h2>",
+ html_table(pretty_compare(cmp_cycle)),
+ "<p>Diese zweite Tabelle enthält Extrapolationen. Annualisierte Kampagnenwerte bei eingestellter Umtriebszahl stehen zusätzlich in der zugehörigen ungerundeten CSV. Keine Saisongewichtung in diesen Einzelkampagnenwerten.</p>",
+ "<p>Die Variante Stall 1 verwendet E1 und E2/r. Die mittlere Stallbasis verwendet f·E1 und f·E2/r. Dabei gilt r=0,764349479506578 und f=(1+r)/2=0,882174739753289 (nur Dezember 2024). Bei einzelnen WRG-Kampagnen sind die prozentualen Reduktionen identisch. Im Jahresmittel unterscheiden sie sich, weil nur die Mittelwert-Variante Stall 2 der Offsetkampagnen in die Basis einbezieht. Rundung nur für die Darstellung; keine neu bestimmten Unsicherheitsintervalle.</p></html>")
+writeLines(cmp_html,file.path(cfg$out,"Kampagnenvergleich.html"))
+stopifnot(nrow(cmp_end)==12,nrow(cmp_cycle)==12,
+ all(is.na(cmp_end[role=="offset",reduction_pct])))
+for(id in campaigns$campaign) {
+ vals<-cmp_end[campaign==id & variant!="unkorrigiert",stall_difference_pct]
+ stopifnot(abs(diff(vals))<1e-10)
+}
+print(cmp_end[,.(campaign,variant,barn1,barn2,reduction_pct)])
+
+
+# Saisongewichtetes Jahresmittel auch für die unkorrigierte Vergleichsvariante.
+annual_compare<-rbindlist(lapply(comparison_variants$variant,function(v) {
+ z<-copy(cmp_cycle[variant==v])
+ # Nur Mittelwert-Variante: je Offsetkampagne Mittel beider Ställe; sonst ausschliesslich Stall 1 als Basis.
+ z[,basis:=ifelse(v=="mittel_beider_staelle" & role=="offset",(barn1+barn2)/2,barn1)]
+ bs<-z[,.(basis=mean(basis)),by=season]
+ ws<-z[role=="wrg",.(wrg=mean(barn2)),by=season]
+ stopifnot(setequal(bs$season,names(cfg$season_weights)),setequal(ws$season,names(cfg$season_weights)))
+ b<-sum(bs$basis*cfg$season_weights[bs$season])*cfg$cycles*cfg$animals_per_place
+ w<-sum(ws$wrg*cfg$season_weights[ws$season])*cfg$cycles*cfg$animals_per_place
+ data.table(variant=v,basis_g_place_year=b,wrg_g_place_year=w,
+  saved_g_place_year=b-w,reduction_pct=100*(1-w/b),cycles=cfg$cycles)
+}))
+save_csv(annual_compare,"jahresvergleich_alle_drei_varianten")
+for(v in variants$variant) {
+ stopifnot(abs(annual_compare[variant==v,basis_g_place_year]-annual[variant==v,basis_g_place_year])<1e-10,
+           abs(annual_compare[variant==v,wrg_g_place_year]-annual[variant==v,wrg_g_place_year])<1e-10)
+}
+annual_pretty<-data.frame(Variante=unname(variant_labels[annual_compare$variant]),
+ `Basis [g/Tierplatz/Jahr]`=fmt(annual_compare$basis_g_place_year,2),
+ `Mit WRG [g/Tierplatz/Jahr]`=fmt(annual_compare$wrg_g_place_year,2),
+ `Differenz [g/Tierplatz/Jahr]`=fmt(annual_compare$saved_g_place_year,2),
+ `Reduktion [%]`=fmt(annual_compare$reduction_pct,2),check.names=FALSE)
+full_html<-gsub("</html>","",cmp_html,fixed=TRUE)
+full_html<-c(full_html,"<h2>Schlachttag- und saisongewichtetes Jahresmittel – alle drei Varianten</h2>",
+ html_table(annual_pretty),paste0("<p>",cfg$cycles," Umtriebe; Winter 25 %, Übergangszeit 50 %, Sommer 25 %. Innerhalb der Saison werden zuerst die Kampagnen gemittelt; nur in der Mittelwert-Variante innerhalb jeder Offsetkampagne zuvor beide Stallwerte. Für Stall 1 als Realität und den unkorrigierten Vergleich stammt die Basis ausschliesslich aus Stall 1. Unkorrigierte Reduktionen enthalten Stallunterschiede und sind keine isolierte WRG-Wirkung. Die Werte sind Modellwerte bei einem Tier je Tierplatz und Umtrieb.</p></html>"))
+writeLines(full_html,file.path(cfg$out,"Kampagnenvergleich_mit_Jahresmittel.html"))
+print(annual_compare)

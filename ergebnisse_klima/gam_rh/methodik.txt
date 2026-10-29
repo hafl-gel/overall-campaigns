@@ -1,0 +1,5 @@
+Einzelmodelle fuer alle fuenf Kampagnen.
+gam_main: nur WRG-Kampagnen Februar/April/Juli 2024; gam_offsets: Dezember 2024/August 2026 ohne WRG.
+Die gemeinsame Kampagnenanalyse enthaelt einen Kampagneneffekt. Keine explizite Korrektur serieller Autokorrelation.
+Deskriptive GAM-Analysen; p-Werte und punktweise Baender sind keine kausale WRG-Wirkung.
+RH-Werte ausserhalb 0-100 % bleiben enthalten und werden separat protokolliert.

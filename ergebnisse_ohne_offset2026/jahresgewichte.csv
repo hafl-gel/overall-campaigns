@@ -1,0 +1,5 @@
+﻿campaign;season;role;include_annual;baseline_weight;wrg_weight
+"feb2024";"winter";"wrg";TRUE;0,166666666666667;0,333333333333333
+"apr2024";"transition";"wrg";TRUE;0,333333333333333;0,333333333333333
+"jul2024";"summer";"wrg";TRUE;0,333333333333333;0,333333333333333
+"dec2024";"winter";"offset";TRUE;0,166666666666667;0
